@@ -1,0 +1,28 @@
+"0","# Predict on validation set
+val_data$BYD_pred <- predict(lm_model, newdata = val_data)
+
+# Predict on test set
+test_data$BYD_pred <- predict(lm_model, newdata = test_data)
+
+# Compute RMSE for validation and test sets
+rmse_val <- sqrt(mean((val_data$BYD_rating - val_data$BYD_pred)^2, na.rm = TRUE))
+rmse_test <- sqrt(mean((test_data$BYD_rating - test_data$BYD_pred)^2, na.rm = TRUE))
+
+rmse_val
+"
+"1","[1]"
+"1"," 1.044266"
+"1","
+"
+"0","rmse_test"
+"1","[1]"
+"1"," 1.044728"
+"1","
+"
+"0","ggplot(test_data, aes(x = BYD_rating, y = BYD_pred)) +"
+"0","  geom_point(color = ""blue"") +"
+"0","  geom_abline(slope = 1, intercept = 0, linetype = ""dashed"", color = ""red"") +"
+"0","  theme_minimal() +"
+"0","  labs(title = ""Observed vs Predicted BYD Ratings (Test Set)"","
+"0","       x = ""Observed BYD Rating"","
+"0","       y = ""Predicted BYD Rating"")"

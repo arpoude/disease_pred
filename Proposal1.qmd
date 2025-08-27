@@ -1,0 +1,183 @@
+---
+title: ""
+format: pdf
+toc: false
+toc-depth: 2
+number-sections: false
+colorlinks: false
+editor: visual 
+bibliography: references.bib
+---
+
+\begin{titlepage}
+\centering
+\vspace*{2.5cm}
+
+{\Huge\bfseries UAS-based Feature Engineering for\\[0.5em] Barley Yellow Dwarf Disease Prediction\\[0.5em] in Winter Wheat \par}
+
+\vspace{2.5cm}
+
+{\Large Arati Poudel \par}
+
+\vspace{2.5cm}
+
+{\large Department of Plant and Soil Sciences \par}
+{\large Oklahoma State University \par}
+
+\vfill
+
+{\large \today \par}
+\end{titlepage}
+
+\newpage
+
+# Abstract
+
+Wheat, the major staple crop of the world, is susceptible to many diseases and pests, causing significant yield losses. Timely and precise management of those diseases is therefore necessary to reduce loss and maintain food security. Though Unmanned Aerial Vehicles (UAVs) have emerged as a revolutionary technology to detect disease symptoms in crops, accurate detection and quantification are still challenging. Thus, this research is conducted to develop models that help in early disease detection in wheat crops using multispectral imagery. For data collection, the multispectral UAVs were flown periodically during the years 2023 and 2024 on wheat breeding trials at the OSU Agronomy Research Station, Stillwater. The flights were carried out at an altitude of 30m with a ground resolution of 1.5cm per pixel, and the ground control points (GCPs) were installed for precise georeferencing. Two sets of vegetation indices (VIs)—three from RGB sensors (VARI, RGBVI, and GRVI) and three from multispectral sensors (NDVI, GNDVI, and NDRE)—will be calculated. Linear regression models will be fitted using i. raw VIs, ii. Statistical descriptors of VIs, and iii. VIs combined with Gabor filters for textural analysis as predictors, whereas the disease ratings will be used as ground truth data. The trained model will be able to show comparable accuracy in disease scoring using UAVs than visual ratings. The developed model could be used to analyze other plant diseases in the future.
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+# Introduction
+
+Wheat, one of the most widely cultivated crops in the world, is affected by various diseases and pests. Diseases including bacterial diseases such as leaf blight, leaf streak; fungal diseases such as powdery mildew, rusts, and viral diseases such as barley yellow dwarf, streak mosaic virus, impact the crop heavily, and the quality of products is also decreased. Pests and diseases are blamed for increasing 20 to 40 percent of the food deficit in the world, as per the Food and Agricultural Organization (FAO, 2017).
+
+Barley Yellow Dwarf (BYD) is one of the major viral diseases caused by multiple viruses from the Luteoviridae family and is transmitted by aphids [@walls2019]. The disease is named Barley Yellow Dwarf, particularly because the symptoms were discovered in Barley for the first time[@rochow1961], but it does affect many cereal crop species from the Gramineae family. The viruses are transmitted from one plant to another when an aphid or a number of aphids suck the cell sap of an infected plant and inject it into the healthy ones[@abbas2022]. The distinctive symptoms that the plants have when they are infected by the virus are reddening of the flag leaf, shortening of plant height, and low root development[@shah2012]. It significantly reduces plant yield and causes huge losses in production. Several control measures have been used in different parts of the world, including the use of resistant varieties, which is the most prominent and powerful one, along with aphid control and crop rotation[@walls2019].
+
+The early detection and management of diseases are necessary for loss control, and these are not possible only through the traditional practices such as crop rotation, while a major breakthrough is necessary. Many research studies have been conducted regarding the use of unmanned aerial vehicles (UAVs) for crop monitoring and disease assessment. UAVs are found to provide high-quality images that are free from cloud cover, are of low cost, and have greater flexibility as compared to manned aircraft [@niu2022]. For disease identification, researchers are more focused on integrating Near Infrared (NIR) and Red Edge (RE) bands on them, which helps in detecting diseases such as wheat rust, rice blast, fusarium wilt, and so on [@su2019].
+
+Different machine learning models are being developed for disease detection in plants such as wheat [@liu2018], bananas [@zhang2022], field beans [@wallen1975], rice [@das2015], and many more. Traditional machine learning models such as support vector machines [@nema2018] and random forests [@su2018] are widely used, whereas deep learning methods like Convolutional Neural Network (CNN) [@shelar2022] and Vision Transformer (VT) [@thai2023] are also in practice. Transformer-based models have higher accuracy than CNN, but still have a few limitations, such as computational competency, as they require larger datasets [@guo2021]. Deep learning models, which are a subset of machine learning, are gaining popularity in terms of precision agriculture.
+
+Generally, machine learning models require three steps: preprocessing of UAS imagery, feature extraction, and classification. Pre-processing of images is done using radiometric calibration, segmentation, enhancement, etc. to increase the quality of the images. Several distinct features, such as textures, colors, and types of diseases, can be extracted. Gabor filters can be used for feature extraction that uses textures and edges for extraction of varying patterns. Gabor filters have both the gaussian component (provides weight) and the sinusoidal component (provides direction). Gabor kernels mimic the visual features (how we recognize textures with our eyes can be simulated using Gabor kernels). It helps in the identification of diseased portions in images apart from the healthy ones.
+
+Disease prediction is very difficult in practice, even with different developed models to differentiate them. Majority of research are focused on disease classification, using a single plant leaf. But, in our research, we aim to establish more enhanced models that can predict diseases early in the field by the UAS imagery that we have. Here, we propose the use of digital elevation models (DEMs) along with the different statistical sets of vegetation indices (VIs) to be used as predictors.
+
+The main contributions of the proposed research work are as follows:
+
+1\. The comparison between different machine learning models such as random forest, support vectors, and deep learning will be carried out.
+
+2\. The gabor filters will be analyzed, segregated, and used as predictors.
+
+3\. Comparison between raw VIs (NDVI, NDRE, EVI, DVI), Statistical VIs (mean, standard deviation, skewness, and kurtosis), and DEM filtered VIs will be done to predict the BYD in a more efficient way.
+
+The model developed in this research will be established as a remarkable contribution for large-scale crop disease prediction and early management, which is possible by the use of unmanned aerial imagery.
+
+\newpage
+
+# Literature review
+
+Plant diseases and pests impact crops highly and result in significant yield loss. Being the most common cereal crop in the world, wheat is grown in large areas worldwide. However, growing wheat is challenged by many pathogens, such as viruses, fungi, bacteria, nematodes, and so on, that cause global economic loss of around \$200 billion, as per [@zhang2022a]. Among different diseases, Barley Yellow Dwarf (BYD) disease, caused by viruses, is found to be the most economically significant viral disease that affects small grains widely [@ali2014].
+
+## Barley Yellow Dwarf (BYD) disease
+
+Barley Yellow Dwarf (BYD) disease is a serious cereal crop disease caused by the BYD virus of the Luteoviridae family, though it has more features in common with the Tombusviridae family [@aradottir2021], and various studies have been done regarding the classification of BYDV. The most common vectors of BYDV are *Rhopalosiphum padi, Rhopalosiphum maidis, Sitobion avenae, Metopolophium dirhodum*, *Schizaphis graminum,* and *Sitobion fragariae* [@ingwell2015]. Dwarfing of shoots, discolored leaves (yellow, purple, red, or chlorosis), fewer ears, sterile ears, and delayed heading are all visual symptoms of BYDV [@ali2018]. However, visual screening for BYDV in the field can be deceptive because symptoms tend to be subtle, differ between plant species and types, and trail behind microscopic changes. Additionally, symptoms might be mistaken for other biotic and abiotic stressors [@aradottir2021].
+
+## Unmanned Aerial Systems (UASs) in Agriculture
+
+Unmanned Aerial Systems (UASs or UAVs), is an aircraft without any human pilot on or inside it, and commonly called as drone. The system includes a ground-based controller, a sensor, and a system of communication with the vehicle [@chang2017]. The flight mission can be remotely operated by a human pilot or with an automated control system using different softwares such as Pix4D mapper, Litchi app, Fly Air, etc. The advancements in technologies in remote sensing has enhanced the data quality and higher spatial as well as temporal data can be collected than conventional manual methods [@bhandari2023].
+
+| Literatures | UAV types | Softwares used | Uses |
+|----|----|----|----|
+| [@lelong2008] | Glider and Parachute | R-software | Monitoring of wheat crops |
+| [@berner2017] | Hexacopter | R-software | Crop protection (spraying) |
+| [@perz2019a] | Fixed-winged | Pix4D + Agisoft photoscan | Estimate agricultural damage |
+| [@stroppiana2018] | Quadcopter | Pix4D mapper | Weed mapping in rice |
+| [@chauhan2019] | Hexacopter | Agisoft metashape | Lodging assessment in wheat |
+| [@bhandari2020] | Hexacopter | Pix4D + Agisoft metashape | Wheat foliage disease severity assessment |
+| [@stoyanova2018] | Hexacopter | Pix4D and QUANTUM GIS | Assessment of wheat and oilseed rape habitus |
+| [@zhu2022] | Hexacopter | Pix4D + ENVI5.3 | Monitor wheat scab |
+
+: Use of UAVs in precision agriculture
+
+## Disease Prediction using UAVs
+
+[@zhu2022a] used partial least squares regression (PLSR), support vector machine regression (SVR), and back propagation neural network (BPNN) as the three algorithms to monitor the wheat scab, among which SVR was found to be the most effective one. [@bhandari2020] used small unmanned aerial vehicle to assess the foliage disease severity in winter wheat, and both the date of UAV data collection and disease rating taken were nearby. [@su2018] used five band multispectral camera for the detection of plant stress caused by yellow rust disease in winter wheat. For that, an automated yellow rust detection technique was developed using random forest classifier, by learning from labelled UAV multispectral imagery. [@heidariandehkordi2020] used visual cryptography techniques to differentiate leaf areas diseased by Wheat Stem Rust and Wheat Leaf Rust. For this, UAV were flown at an altitude of 10m with an airspeed of 4m/s, ground sampling distance (GSD) of 0.28 cm, and flights were planned by using Pix4D software. [@bohnenkamp2019] compared the use of ground as well as UAS sensors for the detection of plant disease using hyper-spectral sensors. The study confirmed that feature selection performs well for the prediction of accuracy if performed in analyzed data set, otherwise fluctuations in data sets impair the accuracy of a data analysis pipeline. [@liu2018] used UAV for data collection, extracted information from digital images, and correlated image variables with the disease index for the detection of wheat powdery mildew and prediction of grain yield.
+
+## Vegetation indices (VIs) based variables
+
+[@huang2012] adopted vegetation indices (VIs) that were highly sensitive to the changes in plant pigments and stresses, initially selecting 20 distinct VIs and then narrowing the selection to 4 VIs (PRI, PhRI, NPCI and ARI) based on sensitivity to yellow rust disease. However, the results showed that only the PhRI was sensitive to only yellow rust, while the others showed responses to other forms of nutrient stresses as well. The most widely used VI, Normalized Difference Vegetation Index (NDVI) was used to distinguish vegetation pixels from the background pixels in the research done by [@hao2025] to detect yellow dwarf disease in wheat. NDVI provided higher statistical dependency as both NIR and Red bands used in NDVI calculation are sensitive to Yellow Rust disease [@su2019].
+
+| Research titles | Number of VIs | Most sig. VIs and results | References |
+|----|----|----|----|
+| Assessing winter wheat foliage disease severity using aerial imagery acquired from small Unmanned Aerial Vehicle (UAV) | 4 VIs | NDVI showed significant relationship with coefficient of infection (CI) in both years. NDI, GI & GLI were linearly related to CI. | [@bhandari2020] |
+| Wheat leaf rust detection at canopy scale under different LAI levels using machine learning techniques | 4SVIs | All SVIs (NBNDVI, PRI & GI), except RVSI performed well at high and medium LAI levels. | [@azadbakht2019] |
+| Using UAV Multispectral Remote Sensing with Appropriate Spatial Resolution and Machine Learning to Monitor Wheat Scab | 21 SVIs | PSRI, RGR, SIPI, ARI, and GLI were found as the most sensitive VIs for monitoring wheat scabs. | [@zhu2022b] |
+| Identification of Wheat Yellow Rust Using Optimal Three-Band Spectral Indices in Different Growth Stages | 15 SVIs | PRI and ARI were found optimal for the monitoring of yellow rust infection | [@zheng2018] |
+| Wheat yellow rust monitoring by learning from multispectral UAV aerial imagery | 18 SVIs | Three most imp SVIs to distinguish healthy vs yellow rust infected plant are: RVI, NDVI, OSAVI. | [@su2018] |
+| Early Detection of Powdery Mildew Disease and Accurate Quantification of Its Severity Using Hyperspectral Images in Wheat | 15 VIs and 8 textural features | 6 VIs (PMI, MSR, MCARI, ARI, SIPI, and PSRI) were significantly correlated with Disease Severity at all growth stage | [@khan2021] |
+| Detection of target spot and bacterial spot diseases in tomato using UAV‑based and benchtop‑based hyperspectral imaging techniques | 35 Spectral VIs | The most significant VI to detect both disease was PRI, whereas NDVI, TVI, and ChI green were also found important. | [@abdulridha2019] |
+| Banana Fusarium Wilt Disease Detection by Supervised and Unsupervised Methods from UAV-Based Multispectral Imagery | 12 VIs | Overall accuracy was higher for VIs obtained from red and NIR bands (NDVI, TDVI, WDRVI) | [@zhang2022b] |
+
+: Vegetation Indices used in agricultural research
+
+## Feature engineering tools for disease prediction
+
+Many literature have shown that the combination of colored features and textured features are important for plant disease identification and classification. Feature extraction is the most important step in machine learning, as it is used to extract maximum information from the raw images so that a computer based algorithm can read it easily, discard the redundant data, and focus on specific characteristics [@javidan2024]. Detection of disease is done by color features, textural features, shape features, and a mixture of two, or all. Color based features includes RGB values, hue, saturation, and luminance as used by [@hasan2022]. They used discrete wavelet transformation (DWT) and color histogram feature extraction tools. Contrast, correlation, homogeneity, energy, entropy, root mean square, skewness, kurtosis, variance, smoothness, etc. are some of the textural features used for plant disease detection [@javidan2024]. Shape feature descriptors such as center of gravity, eccentricity, orientation, aspect ratio, area, solidity, rectangularity, equidiameter, perimeter, ratio of principle axis, are used by [@vishnoi2021].
+
+[@bao2021]used color features, LBP features, GLCM features, and Gabor features to define texture information for feature extraction. Some researchers used VIs based variables and spectral bands as the features that describe data, which are directly involved in machine learning algorithms [@su2018]. Combining different image characteristics such as colors, textures, and shapes can provide us more detailed and accurate plant disease detection systems [@hayit2023].
+
+\newpage
+
+# Methods
+
+## Research Site
+
+The research experiment will be conducted at the OSU Agronomy Research Station, located at Stillwater (36°07'19.8'' N, 97°05'31.5'' W). The flights will be conducted at an altitude of 30 meter from the ground level with a sampling distance of 1.5 cm per pixel. A total of 12 ground control points (GCPs) will be installed for accurate georeferencing of the field.
+
+## UAV platform and datasets
+
+The high-resolution multispectral images will be captured by a DZI Phantom 4 multispectral UAV, having six sensors, mounted on a stabilized gimbal. The sensors contain 5 multispectral narrow-band sensors that captures Red, Green, Blue, RedEdge, and NIR bands respectively, and one RGB sensor. The data from the years 2023-2026 will be used for analysis. Disease ratings of Barley Yellow Dwarf (BYD) will be used as ground truth data. The UAV flights will be in accordance with the dates when BYD rating will be taken.
+
+## Data Processing
+
+We will have two sets of data; one consisting multispectral images, while the other one is BYD ratings. In this study, multispectral images will be used for VI calculation, and used as inputs in the model, whereas disease ratings will be used as outputs.
+
+Three of the vegetation indices will be from the RGB sensors (VARI, RGBVI, & GRVI), and the other three will be from the multispectral sensors (NDVI, GNDVI, & NDRE). The statistical descriptors such as mean, standard deviation, skewness, and kurtosis will be calculated for each VIs. Gabor filters will be extracted for generating features by varying different gabor parameters such as orientation, frequency, wavelength, sigma, aspect ration, and phase offset.
+
+A new approach of disease detection using digital elevation models (DEMs) will be introduced. For this particular disease BYD, the major distinguishing feature is flag leaf reddening, which can be seen in the DEM layer and therefore, we will be using this information as a key factor for using DEM in-coordination with different VI layers. The DEMs with flag leaf in it will be used as a layer to segregate top layered VIs. The VIs values in those pixels will only be used as predictors for one case.
+
+So, either Linear regression models or Bayesian models will be fitted using raw VIs, Statistical VIs, VIs combined with Gabor, and VIs with DEM as 1st layer, as the predictors, while BYD ratings will be used as ground truth. The 50% of total data is used as model training data, 25% as validation, and remaining 25% as the testing data.
+
+\newpage
+
+# Timeline
+
+The work schedule of the overall research is as shown in table below:
+
+| Activities | Expected Time Frame |
+|----|----|
+| Literature review | Throughout research period (2025-2026) |
+| Develop and finalize research methodology | June-July 2025 |
+| Proposal writing | July 2025 |
+| Proposal defense and approval through Committee members | Aug-Sept, 2025 |
+| Data analysis (Paper-I) | Aug-Nov, 2025 |
+| Results interpretation and first thesis draft | Dec 2025 |
+| Final thesis draft | Last week of Dec 2025 |
+
+: Table showing research plan
+
+\newpage
+
+# Expected Outcomes
+
+The research is expected to develop a trained model that will show a comparable accuracy in BYD rating using multispectral imagery than visual rating. The use of different raw as well as filtered VIs will detect BYD disease in a more efficient way, and thus developed models, could be used to distinguish other plant diseases in the future. Early detection and management of disease will be possible once the algorithms are developed.
+
+\newpage
+
+# Limitations
+
+1.  Since only the temporal window of BYD disease was considered, no visible patches of BYD were observed in the field during the 2024–25 season, so we could not use the images from that year for our analysis.
+2.  It was difficult to align UAV flight schedule with the BYD rating date because of challenging environmental condition for a few days, leading to a slight temporal misalignment between images and ground truth values.
+
+\newpage
+
+# Way forward
+
+This research provides information on which sensors
+
+# References
+
+Food and Agricultural Organization, 2017. [https://www.fao.org/pest-and-pesticide-management/about/understanding-the-context/](https://www.fao.org/pest-and-pesticide-management/about/understanding-the-context/en/#:~:text=Pests%20are%20a%20major%20cause,the%20face%20of%20climate%20challenges.)

@@ -1,0 +1,27 @@
+library(dplyr)
+results_df <- read.csv("/carl-data/home/arpoude/Desktop/Work_on_DEM/ndvi_stats_by_plot.csv")
+byd_rating <- read.csv("/carl-data/home/arpoude/Desktop/gabor/FIDwithRating.csv")
+full_data <- right_join(results_df, byd_rating, by = "FID")
+full_data <- full_data |> 
+  mutate( 
+    mean = mean, 
+    sd = sd, 
+    ske = skewness, 
+    kur = kurtosis)  
+library(tidymodels)
+set.seed(88)
+full_data_split <- initial_validation_split(full_data, prop = c(0.75,0.125))
+full_train <- training(full_data_split)
+full_test <- testing(full_data_split)
+full_vals <- validation(full_data_split)
+full_vals
+library(bestNormalize)
+train_rec <- recipe(byd ~ ., data = full_train) |> 
+  step_zv(all_numeric_predictors())  |>  
+  step_impute_median(all_numeric_predictors())  |>  
+  step_orderNorm(all_numeric_predictors()) |> 
+  step_normalize(all_numeric_predictors()) |>  
+  step_pca(all_numeric_predictors(), num_comp = tune())
+Pls_rec <- 
+  train_rec |> 
+  step_pls(all_numeric_predictors(), outcome = "byd", num_comp = tune())

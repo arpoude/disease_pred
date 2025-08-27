@@ -1,0 +1,10 @@
+"0","# Load necessary data
+results_df <- read.csv(""ndvi_stats_by_plot.csv"") %>% 
+  as_tibble()
+byd_rating <- read.csv(""/carl-data/home/arpoude/Desktop/gabor/FIDwithRating.csv"") %>% 
+  as_tibble()
+byd_rating
+"
+"0",""
+"0","# Merge datasets by FID"
+"0","full_data <- right_join(results_df, byd_rating, by = ""FID"")"

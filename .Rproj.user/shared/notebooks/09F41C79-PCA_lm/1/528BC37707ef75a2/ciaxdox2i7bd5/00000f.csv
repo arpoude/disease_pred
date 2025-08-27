@@ -1,0 +1,4 @@
+"0","linear_model <- linear_reg()  |>  "
+"0","  set_engine(""lm"")"
+"0","wf <- workflow()  |>  "
+"0","  add_model(linear_model)"

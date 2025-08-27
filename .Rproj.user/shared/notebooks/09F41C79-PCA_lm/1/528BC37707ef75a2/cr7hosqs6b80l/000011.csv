@@ -1,0 +1,7 @@
+"0","set.seed(111)"
+"0","folds <- vfold_cv(full_train, v = 10)"
+"0","tune_res <- tune_grid("
+"0"," wf, "
+"0"," resamples = folds, "
+"0"," grid = 10"
+"0",")"

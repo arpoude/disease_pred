@@ -1,0 +1,175 @@
+---
+title: "HW2"
+format: pdf
+editor: visual
+---
+
+```{r}
+library(sf)
+library(terra)
+library(ggplot2) 
+library(raster)
+
+#load DEM raster 
+dem0 <- rast("/carl-data/shared/users/sanshre/DPON_2024/Stillwater/ODM_DSM/2024_01_03_ST_M_odm_dsm_modified.tif")
+dem1 <- rast("/carl-data/shared/users/sanshre/DPON_2024/Stillwater/ODM_DSM/2024_04_29_ST_M_odm_dsm.tif")
+dem0_resampled <- resample(dem0, dem1)
+DEM <- dem1 - dem0_resampled
+
+shapfil <- st_read("/carl-data/shared/carl/gcp_detail/shapefile_2024_stw/shape_grid_ST_02_20_2024.shp")
+shapfil <- st_transform(shapfil, crs = crs(DEM, proj = TRUE))
+
+
+```
+
+```{r}
+#load orthophoto and calculate ndvi
+orthophoto <- rast("/carl-data/shared/users/sanshre/DPON_2024/Stillwater/DPON-2024-04-29/M_combined_newV/odm_orthophoto/odm_orthophoto.tif")
+nir <- orthophoto[[4]]
+red <- orthophoto[[1]]
+ndvi <- (nir-red) / (nir+red+0.000001)
+
+```
+
+```{r}
+# Create empty list to store results
+results <- list()
+
+# Loop through each FID
+for (fid in shapfil$FID) {
+  
+  # Get the polygon geometry for the current FID
+  plot_geom <- shapfil[shapfil$FID == fid, ]
+  
+  # Crop/mask NDVI to the plot
+  vi_plot <- crop(ndvi, plot_geom)
+  vi_plot <- mask(vi_plot, plot_geom)
+  
+  # Crop/mask and resample height to the same plot
+  ht_plot <- crop(DEM, plot_geom)
+  ht_plot <- mask(ht_plot, plot_geom)
+  ht_plot <- resample(ht_plot, vi_plot) 
+                      
+  # Calculate average plot plant height 
+  avg_height <- mean(values(ht_plot), na.rm = TRUE) 
+  
+  # Calculate the lower and upper threshold 
+  lower_threshold <- avg_height * 0.80
+  upper_threshold <- avg_height * 0.90 
+  
+  # Create mask for pixels within that height thresholds
+  height_mask <- ht_plot >= lower_threshold & ht_plot <= upper_threshold 
+  
+  # Apply mask to VI plot
+  vi_sub <- mask(vi_plot, height_mask, maskvalue = 0)
+  
+  # Extract VI as numeric 
+  vi_values <- na.omit(values(vi_sub))
+  
+  # Compute plot-level statistics
+  vi_stats <- list(
+    FID = fid,
+    mean = mean(vi_values, na.rm = TRUE),
+    sd = sd(vi_values, na.rm = TRUE),
+    skewness = e1071::skewness(vi_values, na.rm = TRUE),
+    kurtosis = e1071::kurtosis(vi_values, na.rm = TRUE)
+  )
+
+  # Store results
+  results[[as.character(fid)]] <- vi_stats
+}
+viresults_df <- do.call(rbind, lapply(results, as.data.frame))
+results_df <- data.frame(FID = names(results), viresults_df)
+write.csv(results_df, "ndvi_stats_by_plot.csv", row.names = FALSE)
+
+```
+
+```{r}
+# Load necessary data
+library(dplyr)
+results_df <- read.csv("ndvi_stats_by_plot.csv") %>% 
+  as_tibble()
+byd_rating <- read.csv("/carl-data/home/arpoude/Desktop/gabor/FIDwithRating.csv") %>% 
+  as_tibble()
+byd_rating
+
+# Merge datasets by FID
+full_data <- right_join(results_df, byd_rating, by = "FID")
+```
+
+```{r}
+#make features 
+full_data <- full_data %>%
+  mutate(
+    mean_only = mean,
+    mean_sd = mean * sd,
+    mean_sd_skew = mean * sd * skewness,
+    mean_sd_skew_kurt = mean * sd * skewness * kurtosis
+  )
+
+# Select only numeric features for PCA
+features_df <- full_data %>%
+  select(mean_only, mean_sd, mean_sd_skew, mean_sd_skew_kurt)
+features_df_clean <- na.omit(features_df)
+
+# Perform PCA
+pca_res <- prcomp(features_df_clean, center = TRUE, scale. = TRUE)
+
+full_data_clean <- full_data[complete.cases(features_df),]
+
+# Extract PCA scores and add FID + BYD rating
+pca_scores_df <- as.data.frame(pca_res$x) %>%
+  mutate(FID = full_data_clean$FID,
+         BYD_rating = full_data_clean$byd)
+pca_scores_df_clean <- pca_scores_df %>% 
+  filter(!is.na(BYD_rating))
+
+```
+
+```{r}
+library(caret)
+set.seed(123)  # for reproducibility
+
+# Create a training (70%) and temp (30%) split
+train_index <- createDataPartition(pca_scores_df_clean$BYD_rating, p = 0.7, list = FALSE)
+train_data <- pca_scores_df[train_index, ]
+temp_data  <- pca_scores_df[-train_index, ]
+
+# Split temp_data into validation (15%) and testing (15%)
+val_index <- createDataPartition(temp_data$BYD_rating, p = 0.5, list = FALSE)
+val_data <- temp_data[val_index, ]
+test_data <- temp_data[-val_index, ]
+
+#Using all PCs
+pc_cols <- grep("^PC", names(train_data), value = TRUE)
+formula <- as.formula(paste("BYD_rating ~", paste(pc_cols, collapse = " + ")))
+
+# Fit model on training set
+lm_model <- lm(formula, data = train_data)
+
+# View summary
+summary(lm_model)
+```
+
+```{r}
+# Predict on validation set
+val_data$BYD_pred <- predict(lm_model, newdata = val_data)
+
+# Predict on test set
+test_data$BYD_pred <- predict(lm_model, newdata = test_data)
+
+# Compute RMSE for validation and test sets
+rmse_val <- sqrt(mean((val_data$BYD_rating - val_data$BYD_pred)^2, na.rm = TRUE))
+rmse_test <- sqrt(mean((test_data$BYD_rating - test_data$BYD_pred)^2, na.rm = TRUE))
+
+rmse_val
+rmse_test
+
+ggplot(test_data, aes(x = BYD_rating, y = BYD_pred)) +
+  geom_point(color = "blue") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  theme_minimal() +
+  labs(title = "Observed vs Predicted BYD Ratings (Test Set)",
+       x = "Observed BYD Rating",
+       y = "Predicted BYD Rating")
+```

@@ -1,0 +1,71 @@
+#load libraries 
+library(sf)
+library(terra)
+library(ggplot2)
+
+#load DEM raster 
+dem <- rast("/carl-data/shared/users/sanshre/DPON_2024/Stillwater/ODM_DSM/2024_04_29_ST_M_odm_dsm.tif")
+plot(dem, main = "DEM")
+
+#calculating top 30% elevated portion only---not useful (earth surface is itself disoriented and elevation differs) 
+elev_values <- values(dem, na.rm = TRUE)
+threshold_70 <- quantile(elev_values, 0.70, na.rm = TRUE)
+top_30_dem <- classify(dem, matrix(c(-Inf, threshold_70, NA), ncol = 3, byrow = TRUE))
+plot(top_30_dem, main = "TOP 30% Elev")
+
+#subracting dem height by 2m-----not good 
+crs(dem)
+dem_lowerby2 <- dem - 2
+plot(dem_lowerby2, main = "DEM minus 2m")
+demtop <- dem - dem_lowerby2
+plot(demtop, main = 'demtop')
+hasValues(demtop)
+summary(values(demtop))
+
+#extract dem for a single plot 
+dem <- rast("/carl-data/shared/users/sanshre/DPON_2024/Stillwater/ODM_DSM/2024_04_29_ST_M_odm_dsm.tif")
+shapfil <- st_read("/carl-data/shared/carl/gcp_detail/shapefile_2024_stw/shape_grid_ST_02_20_2024.shp")
+if (crs(shapfil) != (crs(dem)) {
+  print("CRS do not match")
+} else { 
+    print("CRS matches")
+  }
+shapfil <- st_transform(shapfil, crs = crs(dem, proj = TRUE))
+Plot533 <- shapfil[shapfil$FID == 533,]
+cropped_raster <- crop(dem, vect(Plot533))
+plot(cropped_raster)
+masked_raster <- mask(cropped_raster, vect(Plot533))                        
+plot(masked_raster)
+
+#subtract dem height by 0.10meters
+dem_minus0.10 <- masked_raster - 0.10
+plot(dem_minus0.10, main = "FID533-dem")
+demoffid533 <- masked_raster - dem_minus0.10
+plot(demoffid533, main = "Top533")
+
+#load orthophoto and calculate ndvi
+orthophoto <- rast("/carl-data/shared/users/sanshre/DPON_2024/Stillwater/DPON-2024-04-29/M_combined_newV/odm_orthophoto/odm_orthophoto.tif")
+nir <- orthophoto[[4]]
+red <- orthophoto[[1]]
+ndvi <- (nir-red) / (nir+red+0.000001)
+ndvi_533 <- mask(crop(ndvi, vect(Plot533)), vect(Plot533))
+plot(ndvi_533)
+
+#matching ndvi and dem, overlay them
+resampleNDVI <- resample(ndvi_533,demoffid533)
+combine2layers <- c(demoffid533, resampleNDVI)
+
+#visualize in ggplot (code copied from chatGPT)
+names(combine2layers) <- c("elevation", "ndvi")
+df <- as.data.frame(combine2layers, xy = TRUE, na.rm = TRUE)
+ggplot(df, aes(x = x, y = y)) +
+  geom_raster(aes(fill = ndvi)) +
+  geom_contour(aes(z = elevation), color = "white", alpha = 0.4) +
+  scale_fill_viridis_c(name = "NDVI") +
+  coord_equal() +
+  theme_minimal() +
+  labs(title = "NDVI Overlaid on Elevation (Plot 533)",
+       x = "Easting", y = "Northing")
+#mean ndvi of this single plot 
+mean(df$ndvi, na.rm = TRUE)
+

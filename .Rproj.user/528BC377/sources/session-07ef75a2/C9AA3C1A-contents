@@ -1,0 +1,30 @@
+library(terra)
+library(plyr)
+library(sf)
+library(tidyverse)
+
+shapefile = st_read("/carl-data/shared/carl/gcp_detail/shapefile_2024_stw/shape_grid_ST_02_20_2024.shp")
+shapefile 
+
+ratings = read.csv(file.choose())
+ratings
+
+shp_with_rate = merge(shapefile, ratings, by.x = "FID", by.y = "byd")
+shp_with_rate
+head(shapefile$FID)
+head(ratings$plot_id)
+all(shapefile$FID %in% ratings$plot_id)
+setdiff(shapefile$FID, ratings$plot_id)
+shapefile$FID = shapefile$FID + 1
+head(shapefile$FID)
+all(shapefile$FID %in% ratings$plot_id)
+shape_with_rating = merge(shapefile, ratings, by.x = "FID", by.y = "byd")
+shape_with_rating
+
+st_field_map <- read.csv("/carl-data/shared/carl/active/DPON_Field_maps/DPON_2024_UAS_reference.csv") %>% 
+  as_tibble() %>% 
+  mutate(FID = fid) %>% 
+  select(-fid)
+FID_with_rating = merge(st_field_map, ratings)  
+FID_with_rating 
+write.csv(FID_with_rating, "FIDwithRating.csv")

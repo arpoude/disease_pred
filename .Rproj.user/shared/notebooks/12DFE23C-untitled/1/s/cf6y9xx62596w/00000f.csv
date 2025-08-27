@@ -1,0 +1,37 @@
+"0","dem0_resampled <- resample(dem0, dem1)
+dem0_resampled <- resample(dem0, dem1)
+DEM <- dem1 - dem0_resampled
+DEM <- dem1 - dem0_resampled
+shapfil <- st_read(""/carl-data/shared/carl/gcp_detail/shapefile_2024_stw/shape_grid_ST_02_20_2024.shp"")
+"
+"1","Reading layer `"
+"1","shape_grid_ST_02_20_2024"
+"1","' from data source "
+"1","
+"
+"1","  "
+"1","`"
+"1","/carl-data/shared/carl/gcp_detail/shapefile_2024_stw/shape_grid_ST_02_20_2024.shp"
+"1","' "
+"1","
+"
+"1","  "
+"1","using driver `"
+"1","ESRI Shapefile"
+"1","'"
+"1","
+"
+"1","Simple feature collection with 2418 features and 1 field"
+"1","
+"
+"1","Geometry type: POLYGON
+"
+"1","Dimension:     XY
+"
+"1","Bounding box:  "
+"1","xmin: 671661.4 ymin: 3999098 xmax: 671743.3 ymax: 3999271"
+"1","
+"
+"1","Projected CRS: WGS 84 / UTM zone 14N
+"
+"0","shapfil <- st_transform(shapfil, crs = crs(DEM, proj = TRUE))"

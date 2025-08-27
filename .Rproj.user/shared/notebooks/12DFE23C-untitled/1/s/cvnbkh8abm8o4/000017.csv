@@ -1,0 +1,7 @@
+"0","full_data_clean <- full_data[complete.cases(features_df_clean),]
+"
+"1","[1m[33mError[39m in `full_data[complete.cases(features_df_clean), ]`:[22m
+[33m![39m Can't subset rows with `complete.cases(features_df_clean)`.
+[31m✖[39m Logical subscript `complete.cases(features_df_clean)` must be size 1 or 1951, not 1905.
+[90mRun `]8;;x-r-run:rlang::last_trace()rlang::last_trace()]8;;` to see where the error occurred.[39m
+"
